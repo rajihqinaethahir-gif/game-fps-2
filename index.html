@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FPS Game - Survival Shooter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .hud-element {
+            position: absolute;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        #score {
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+        }
+
+        #health {
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+        }
+
+        #ammo {
+            bottom: 80px;
+            right: 20px;
+            font-size: 20px;
+        }
+
+        #timer {
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        #wave {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+        }
+
+        #crosshair {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .crosshair-line {
+            position: absolute;
+            background: #00ff00;
+            opacity: 0.8;
+        }
+
+        .crosshair-h {
+            width: 10px;
+            height: 2px;
+            left: 10px;
+            top: 14px;
+        }
+
+        .crosshair-v {
+            width: 2px;
+            height: 10px;
+            left: 14px;
+            top: 10px;
+        }
+
+        .crosshair-dot {
+            width: 4px;
+            height: 4px;
+            background: #00ff00;
+            border-radius: 50%;
+            left: 13px;
+            top: 13px;
+        }
+
+        #mainMenu, #gameOver, #settings {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            pointer-events: auto;
+        }
+
+        .menu-content {
+            text-align: center;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+
+        .menu-content h1 {
+            font-size: 48px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
+        }
+
+        .menu-content h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: all 0.3s;
+            pointer-events: auto;
+        }
+
+        button:hover {
+            background: #00cc00;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .theme-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        .theme-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .theme-btn.active {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #highScores {
+            margin-top: 30px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            display: inline-block;
+        }
+
+        #highScores div {
+            padding: 5px 15px;
+            border-bottom: 1px solid #00ff00;
+            font-size: 14px;
+        }
+
+        .enemy-type-selector {
+            margin: 20px 0;
+        }
+
+        .enemy-type-selector label {
+            margin: 0 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .enemy-type-selector input[type="radio"] {
+            margin-right: 5px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .menu-content h1 {
+                font-size: 32px;
+            }
+
+            .menu-content h2 {
+                font-size: 24px;
+            }
+
+            button {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+
+            .theme-buttons {
+                grid-template-columns: repeat(1, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="canvas"></canvas>
+        
+        <div id="ui">
+            <div id="mainMenu" class="menu-content">
+                <div>
+                    <h1>⚔️ FPS SURVIVAL ⚔️</h1>
+                    <p style="font-size: 14px; margin-bottom: 20px;">Bertahanlah sebisa mungkin melawan musuh!</p>
+                    
+                    <div class="enemy-type-selector">
+                        <label>
+                            <input type="radio" name="enemyType" value="mixed" checked>
+                            Mixed (Zombie + Human)
+                        </label>
+                        <label>
+                            <input type="radio" name="enemyType" value="zombie">
+                            Zombie Only
+                        </label>
+                        <label>
+                            <input type="radio" name="enemyType" value="human">
+                            Human Only
+                        </label>
+                    </div>
+
+                    <div class="theme-buttons" id="themeButtons">
+                        <button class="theme-btn active" data-theme="forest">🌲 Forest</button>
+                        <button class="theme-btn" data-theme="city">🏙️ City</button>
+                        <button class="theme-btn" data-theme="space">🚀 Space</button>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="startBtn">START GAME</button>
+                        <button id="highScoresBtn">HIGH SCORES</button>
+                        <button id="settingsBtn">SETTINGS</button>
+                    </div>
+
+                    <div id="highScores" class="hidden"></div>
+                </div>
+            </div>
+
+            <div id="settings" class="hidden menu-content">
+                <div>
+                    <h2>⚙️ SETTINGS ⚙️</h2>
+                    
+                    <div style="margin: 30px 0; text-align: left; display: inline-block;">
+                        <label style="display: block; margin: 15px 0; font-size: 16px;">
+                            Master Volume: 
+                            <input type="range" id="volumeSlider" min="0" max="100" value="70" style="width: 200px;">
+                            <span id="volumeValue">70%</span>
+                        </label>
+
+                        <label style="display: block; margin: 15px 0; font-size: 16px;">
+                            Game Duration (seconds): 
+                            <input type="number" id="gameDuration" min="30" max="600" value="180" style="width: 100px; padding: 5px;">
+                        </label>
+
+                        <label style="display: block; margin: 15px 0; font-size: 16px;">
+                            Difficulty: 
+                            <select id="difficulty" style="padding: 5px; width: 150px;">
+                                <option value="easy">Easy</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="hard">Hard</option>
+                                <option value="nightmare">Nightmare</option>
+                            </select>
+                        </label>
+
+                        <label style="display: block; margin: 15px 0; font-size: 16px;">
+                            <input type="checkbox" id="soundToggle" checked>
+                            Enable Sound
+                        </label>
+
+                        <label style="display: block; margin: 15px 0; font-size: 16px;">
+                            <input type="checkbox" id="bloodToggle" checked>
+                            Blood Effects
+                        </label>
+                    </div>
+
+                    <button id="backBtn" style="margin-top: 30px;">BACK</button>
+                </div>
+            </div>
+
+            <div id="gameOver" class="hidden menu-content">
+                <div>
+                    <h2>GAME OVER</h2>
+                    <p id="finalScore" style="font-size: 24px; margin: 20px 0;">Score: 0</p>
+                    <p id="gameStats" style="font-size: 14px; margin-bottom: 30px;"></p>
+                    
+                    <div id="highScoresDisplay"></div>
+                    
+                    <div class="button-group">
+                        <button id="restartBtn">PLAY AGAIN</button>
+                        <button id="menuBtn">MAIN MENU</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="score" class="hud-element">Score: 0</div>
+            <div id="health" class="hud-element">Health: 100</div>
+            <div id="ammo" class="hud-element">Ammo: 30/120</div>
+            <div id="timer" class="hud-element hidden">180</div>
+            <div id="wave" class="hud-element hidden">Wave: 1 | Enemies: 0</div>
+
+            <div id="crosshair">
+                <div class="crosshair-line crosshair-h"></div>
+                <div class="crosshair-line crosshair-v"></div>
+                <div class="crosshair-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="libs/three.min.js"></script>
+    <script src="libs/cannon.js"></script>
+    <script src="audio-system.js"></script>
+    <script src="character-creator.js"></script>
+    <script src="enemy-system.js"></script>
+    <script src="weapon-system.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
